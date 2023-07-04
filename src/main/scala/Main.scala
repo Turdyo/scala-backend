@@ -35,6 +35,7 @@ object MlbApi extends ZIOAppDefault {
   val endpoints: App[Any] =
     Http
       .collect[Request] {
+        case Method.GET -> Root => Response.json("""{"response": "API works !"}""")
         case Method.GET -> Root / "init" => ???
         case Method.GET -> Root / "games" => ???
         case Method.GET -> Root / "predict" / "game" / gameId => ???
@@ -42,7 +43,7 @@ object MlbApi extends ZIOAppDefault {
       .withDefaultErrorResponse
 
   val app: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
-    conn <- create *> insertRows
+    // conn <- create *> insertRows
     _ <- Server.serve(endpoints)
   } yield ()
 
