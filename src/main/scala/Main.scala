@@ -3,6 +3,7 @@ package mlb
 import zio._
 import zio.jdbc._
 import zio.http._
+import zio.stream.ZStream
 
 object MlbApi extends ZIOAppDefault {
 
@@ -14,7 +15,7 @@ object MlbApi extends ZIOAppDefault {
     "password" -> "postgres"
   )
 
-  val connectionPool : ZLayer[ZConnectionPoolConfig, Throwable, ZConnectionPool] =
+  val connectionPool: ZLayer[ZConnectionPoolConfig, Throwable, ZConnectionPool] =
     ZConnectionPool.h2mem(
       database = "testdb",
       props = properties
@@ -26,14 +27,32 @@ object MlbApi extends ZIOAppDefault {
     )
   }
 
-  val endpoints: App[Any] =
+  val readAll: ZIO[ZConnectionPool, Throwable, Chunk[(Int, String)]] = transaction {
+    selectAll(sql"SELECT season, playoff FROM mytable".as[(Int, String)])
+  }
+
+  val readScore: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {
+    selectOne(sql"select score1 from mytable".as[Int])
+  }
+
+  val endpoints: App[ZConnectionPool] =
     Http
-      .collect[Request] {
-        case Method.GET -> Root => Response.json("""{"response": "API works !"}""")
+      .collectZIO[Request] {
+        case Method.GET -> Root => ZIO.from(Response.json("""{"response": "API works !"}"""))
         case Method.GET -> Root / "init" => {
-          Response.json("""{"response": "database initialised !"}""")
+          ZIO.from(Response.json("""{"response": "database initialised !"}"""))
         }
         case Method.GET -> Root / "games" => ???
+
+        case Method.GET -> Root / "test" => {
+          for {
+            // data <- readAll
+            // collectedData <- ZIO.from(data.collect {case (season, playoff) => })
+            score <- readScore
+            response <- ZIO.from(Response.json(s"""{"response": "${score}"}"""))
+          } yield response
+        }
+
         case Method.GET -> Root / "predict" / "game" / gameId => ???
       }
       .withDefaultErrorResponse
@@ -43,11 +62,12 @@ object MlbApi extends ZIOAppDefault {
       val values: Data = csvToList("./csv/mlb_elo_latest.csv")
       for (line <- values) {
         insertRows(line)
-          .catchAll({ error => 
+          .catchAll({ error =>
             ZIO.die(error)
           })
       }
     })
+    _ <- Console.printLine("Data Loaded")
     _ <- Server.serve(endpoints)
   } yield ()
 
