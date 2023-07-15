@@ -79,14 +79,17 @@ object MlbApi extends ZIOAppDefault {
         case Method.GET -> Root / "init" => {
           ZIO.from(Response.json("""{"response": "database initialised !"}"""))
         }
-        case Method.GET -> Root / "games" => ???
+        case Method.GET -> Root / "season-playoff" => {
+          for{
+            result <- readAll
+            response <- ZIO.from(chunkOfTwoToJson(result))
+          } yield response
+        }
 
-        case Method.GET -> Root / "test" => {
+        case Method.GET -> Root / "first-score" => {
           for {
-            // data <- readAll
-            // collectedData <- ZIO.from(data.collect {case (season, playoff) => })
             score <- readScore
-            response <- ZIO.from(Response.json(s"""{"response": "${score}"}"""))
+            response <- ZIO.from(optionToJson(score))
           } yield response
         }
 
