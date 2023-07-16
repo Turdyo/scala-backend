@@ -4,6 +4,9 @@ import zio._
 import zio.jdbc._
 import zio.http._
 
+/**
+  * ZIO Transation that create the table match in our database
+  */
 val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
   execute(
     sql"""
@@ -38,6 +41,9 @@ val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
   )
 }
 
+/**
+  * ZIO transaction that insert all the data stored in the mlb_elo.csv file into the match table.
+  */
 val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transaction {
   val csvList = csvToList("./csv/mlb_elo_latest.csv")
   val queries = csvList.zipWithIndex.map((line, index) => {
@@ -62,6 +68,12 @@ val readScore: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {
   selectOne(sql"SELECT score1 from match".as[Int])
 }
 
+/**
+  * ZIO transaction that return the winning team, according to the elo_prob columns of the data.
+  * It uses SQL to generate the result.
+  * 
+  * @param gameId the id of the game we want to predict the result from.
+  */
 def predictEloGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[String]] = transaction {
   val id = gameId.toInt
   selectOne(
@@ -70,6 +82,12 @@ def predictEloGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[Strin
   )
 }
 
+/**
+  * ZIO transaction that return the winning team, according to the rating_prob columns of the data.
+  * It uses SQL to generate the result.
+  *
+  * @param gameId the id of the game we want to predict the result from.
+  */
 def predictRatingGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[String]] = transaction {
   val id = gameId.toInt
   selectOne(
