@@ -46,7 +46,6 @@ val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
   */
 val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transaction {
   var csvList = csvToList("./csv/mlb_elo_latest.csv")
-  if (csvList.isEmpty) csvList = csvToList("./csv/mlb_elo_latest.csv")
   if (csvList.isDefined) {
     val queries = csvList.get.zipWithIndex.map((line, index) => {
       insert(
