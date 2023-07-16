@@ -3,9 +3,9 @@
 ## Dataset Description
 The "Major League Baseball Dataset" from Kaggle is a comprehensive collection of data related to Major League Baseball (MLB) games, players, teams, and statistics. The dataset contains information about game-by-game Elo ratings and forecasts back to 1871. You can visit the [Kaggle](https://www.kaggle.com/datasets/saurabhshahane/major-league-baseball-dataset) page for a more detailed description of the dataset. 
 
-Since the dataset is to heavy to fit in a git repository, **you need to download the dataset and put it into the `./csv/` folder.**
+Since the dataset is to heavy to fit in a git repository, **you need to download the dataset into the `./csv/` folder.** The two needed files are `mlb_elo.csv`, which contains all the data since 1871, and `mlb_elo_latest.csv`, that contains the data of the 2021 season.
 
-The dataset is available in CSV format: `mlb_elo.csv` contains all data: `mlb_elo_latest.csv` contains data for only the latest season. No need to register and download the files from Kaggle, they are available in Teams group's files tab.
+The dataset is composed of 26 columns, whit a few of them
 
 ## Initialisation and running of the project
 
@@ -48,14 +48,6 @@ The dataset includes two ratings systems, ELO and MLB Predictions, which are use
 1. Implement tests: Write test cases to validate the functionality of your application. Consider using frameworks like ScalaTest or ZIO Test to write unit tests that cover critical components of your codebase.
 
 1. Consider functional properties: Wherever applicable, emphasize functional programming principles such as immutability, referential transparency, and composability. Use appropriate abstractions and design patterns to enhance code modularity and maintainability.
-
-## Additional Requirements
-
-1. Group Size: Form groups of up to 4 students. You are encouraged to collaborate and discuss ideas within your group but ensure that each member actively contributes to the project.
-
-1. Due Date: The project is expected to be completed within one week after the class. Submit your project by the specified due date and time. Late submissions may incur penalties unless prior arrangements have been made with the instructor.
-
-1. Language: Use English for code, comments and documentation.
 
 ## Deliverables
 
