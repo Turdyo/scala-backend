@@ -24,6 +24,17 @@ def optionToJson(optionnalValue: Option[Any]): Response = {
   Response.json(s"""{"response": ${optionnalValue.getOrElse(default = null)}}""")
 }
 
+def chunkOfTwoToJson(chunk: Chunk[(Any, Any)]): Response = chunk.isEmpty match
+  case false => {
+    val stringBuilder = mutable.StringBuilder("[")
+    chunk.toList.foreach((a, b) => stringBuilder.addAll(s"""{"val1":${a}, "val2":${b}},"""))
+    stringBuilder.replace(start = stringBuilder.length()-1, end = stringBuilder.length(), "").addOne(']')
+    Response.json(s"""{"response": ${stringBuilder.toString()}}""")
+  }
+  case true => {
+    Response.json(s"""{"response": ${null}}""")
+  }
+
 def optionPredictToJson(predict: Option[(String, String, String)], result: Int): Response = {
   val predictData = predict.getOrElse(null)
   predictData match
@@ -40,11 +51,4 @@ def optionPredictToJson(predict: Option[(String, String, String)], result: Int):
         }
       """)
     }
-}
-
-def chunkOfTwoToJson(chunk: Chunk[(Any, Any)]):Response = {
-  val stringBuilder = mutable.StringBuilder("[")
-  chunk.toList.foreach((a, b) => stringBuilder.addAll(s"""{"val1":${a}, "val2":${b}},"""))
-  stringBuilder.replace(start = stringBuilder.length()-1, end = stringBuilder.length(), "").addOne(']')
-  Response.json(s"""{"response": ${stringBuilder.toString()}}""")
 }
