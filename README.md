@@ -1,15 +1,31 @@
 # Class Exam Instruction: Building a ZIO Application Backend
 
-## Topic
+## Dataset Description
+The "Major League Baseball Dataset" from Kaggle is a comprehensive collection of data related to Major League Baseball (MLB) games, players, teams, and statistics. The dataset contains information about game-by-game Elo ratings and forecasts back to 1871. You can visit the [Kaggle](https://www.kaggle.com/datasets/saurabhshahane/major-league-baseball-dataset) page for a more detailed description of the dataset. 
 
-Building a REST API using the "Major League Baseball Dataset" from [Kaggle](https://www.kaggle.com/datasets/saurabhshahane/major-league-baseball-dataset).
-
-### Dataset Description
-The "Major League Baseball Dataset" from Kaggle is a comprehensive collection of data related to Major League Baseball (MLB) games, players, teams, and statistics. The dataset contains information about game-by-game Elo ratings and forecasts back to 1871. You can visit the Kaggle page for a more detailed description of the dataset.
+Since the dataset is to heavy to fit in a git repository, **you need to download the dataset and put it into the `./csv/` folder.**
 
 The dataset is available in CSV format: `mlb_elo.csv` contains all data: `mlb_elo_latest.csv` contains data for only the latest season. No need to register and download the files from Kaggle, they are available in Teams group's files tab.
 
-### Ratings Systems: ELO and MLB Predictions
+## Initialisation and running of the project
+
+In order to run the project, you will need to run specific commands in the following order :
+
+- This command will make you connect to the sbt build server. It will load all the dependencies stored in the `build.sbt` file.
+  ```
+  sbt
+  ```
+
+- You can now run the project with:
+  ```
+  ~reStart
+  ```
+- You can also directly use:
+  ```
+  sbt ~reStart
+  ```
+
+## Ratings Systems: ELO and MLB Predictions
 The dataset includes two ratings systems, ELO and MLB Predictions, which are used to evaluate teams' performance and predict game outcomes:
 
 1. **ELO**: The ELO rating system is a method for calculating the relative skill levels of teams in two-player games, such as chess. In the context of MLB, the ELO rating system assigns a numerical rating to each team, which reflects their relative strength. The rating is updated based on game outcomes, with teams gaining or losing points depending on the result of the match.
