@@ -28,18 +28,8 @@ class ToolsTest extends munit.FunSuite {
   test("optionToJson") {
     val correctResponse = Response.json("""{"response": 1}""")
 
-    assertEquals(nullResponse, optionToJson(None))
-    assertEquals(correctResponse, optionToJson(Option(1)))
-  }
-
-  test("chunkofTwoJson") {
-    val emptyChunkResponse = Chunk()
-    val size2chunkReponse = Chunk((1, "my_string"), (2, "my_string"))
-
-    val expectedResult = Response.json("""{"response": [{"val1":1, "val2":my_string},{"val1":2, "val2":my_string}]}""")
-
-    assertEquals(nullResponse.body, chunkOfTwoToJson(emptyChunkResponse).body)
-    assertEquals(expectedResult.body, chunkOfTwoToJson(size2chunkReponse).body)
+    assertEquals(nullResponse, predictOptionToJson(None))
+    assertEquals(correctResponse, predictOptionToJson(Option(1)))
   }
 
   test("matchChunkToJsonResponse") {

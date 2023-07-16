@@ -20,38 +20,30 @@ object MlbApi extends ZIOAppDefault {
       props = properties
     )
 
-  val endpoints: App[ZConnectionPool] = Http
-    .collectZIO[Request] {
-      case Method.GET -> Root => ZIO.from(Response.json("""{"response": "API works !"}"""))
-      case Method.GET -> Root / "init" => {
-        ZIO.from(Response.json("""{"response": "database initialised !"}"""))
-      }
-      // case Method.GET -> Root / "season-playoff" =>
-      //   for {
-      //     result <- readAll
-      //     response <- ZIO.from(chunkOfTwoToJson(result))
-      //   } yield response
+  val endpoints: App[ZConnectionPool] =
+    Http
+      .collectZIO[Request] {
+        case Method.GET -> Root => ZIO.from(Response.json("""{"response": "API works !"}"""))
+        case Method.GET -> Root / "init" => {
+          ZIO.from(Response.json("""{"response": "database initialised !"}"""))
+        }
 
-      case Method.GET -> Root / "first-score" =>
-        for {
-          score <- readScore
-          response <- ZIO.from(optionToJson(score))
-        } yield response
+        case Method.GET -> Root / "predict" / "elo" / gameId => {
+          for {
+            _ <- Console.printLine(s"Prediction by elo for game: ${gameId}")
+            data <- predictEloGame(gameId)
+            response <- ZIO.from(predictOptionToJson(data))
+          } yield response
+        }
 
-      case Method.GET -> Root / "predict" / "elo" / gameId =>
-        for {
-          _ <- Console.printLine(s"Prediction by elo for game: ${gameId}")
-          data <- predictEloGame(gameId)
-          response <- ZIO.from(optionToJson(data))
-        } yield response
-
-      case Method.GET -> Root / "predict" / "rating" / gameId =>
-        for {
-          _ <- Console.printLine(s"Prediction by rating for game: ${gameId}")
-          data <- predictRatingGame(gameId)
-          response <- ZIO.from(optionToJson(data))
-        } yield response
-
+        case Method.GET -> Root / "predict" / "rating" / gameId => {
+          for {
+            _ <- Console.printLine(s"Prediction by rating for game: ${gameId}")
+            data <- predictRatingGame(gameId)
+            response <- ZIO.from(predictOptionToJson(data))
+          } yield response
+        }
+        
       case Method.GET -> Root / "matches" => for {
         data <- readAll
         response <- ZIO.from(matchChunkToJsonReponse(data))
@@ -66,10 +58,9 @@ object MlbApi extends ZIOAppDefault {
         data <- readMatch(match_id)
         response <- ZIO.from(matchOptionToJsonReponse(data))
       } yield response
-      
-
-    }
-    .withDefaultErrorResponse
+        
+      }
+      .withDefaultErrorResponse
 
   val app: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
     conn <- create *> insertRows
