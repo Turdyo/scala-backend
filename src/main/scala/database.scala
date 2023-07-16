@@ -45,19 +45,24 @@ val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
   * ZIO transaction that insert all the data stored in the mlb_elo.csv file into the match table.
   */
 val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transaction {
-  val csvList = csvToList("./csv/mlb_elo_latest.csv")
-  val queries = csvList.zipWithIndex.map((line, index) => {
-    insert(
-      sql"INSERT INTO match VALUES(${index}, ${line(0)}, ${line(1)}, ${line(2)}, ${line(3)}, ${line(4)}, ${line(
-          5
-        )}, ${line(6)}, ${line(7)}, ${line(8)}, ${line(9)}, ${line(10)}, ${line(11)}, ${line(12)}, ${line(13)}, ${line(
-          14
-        )}, ${line(15)}, ${line(16)}, ${line(17)}, ${line(18)}, ${line(19)}, ${line(20)}, ${line(21)}, ${line(
-          22
-        )}, ${line(23)}, ${line(24)}, ${line(25)})"
-    )
-  })
-  ZIO.collectAll(queries)
+  var csvList = csvToList("./csv/mlb_elo_latest.csv")
+  if (csvList.isDefined) {
+    val queries = csvList.get.zipWithIndex.map((line, index) => {
+      insert(
+        sql"INSERT INTO match VALUES(${index}, ${line(0)}, ${line(1)}, ${line(2)}, ${line(3)}, ${line(4)}, ${line(
+            5
+          )}, ${line(6)}, ${line(7)}, ${line(8)}, ${line(9)}, ${line(10)}, ${line(11)}, ${line(12)}, ${line(13)}, ${line(
+            14
+          )}, ${line(15)}, ${line(16)}, ${line(17)}, ${line(18)}, ${line(19)}, ${line(20)}, ${line(21)}, ${line(
+            22
+          )}, ${line(23)}, ${line(24)}, ${line(25)})"
+      )
+    })
+    ZIO.collectAll(queries)
+  }
+  else {
+    ZIO.dieMessage(message = "Couldn't read the csv files !")
+  }
 }
 
 val readAll: ZIO[ZConnectionPool, Throwable, Chunk[Match]] = transaction {

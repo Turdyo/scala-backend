@@ -6,34 +6,77 @@ import zio.jdbc._
 import zio.http.Response
 import com.github.tototoshi.csv._
 import scala.collection.mutable
+import java.io.FileNotFoundException
 
-/**
-  * Takes the path of a csv file containing the columns declared in our "match sql table". 
-  * If the file is not found, it will return an empty List.
+/** Takes the path of a csv file containing the columns declared in our "match sql table". If the file is not found, it
+  * will return an empty List.
   *
-  * @param path the path of the file
-  * @return the List of lines, lines being either a String or None.
+  * @param path
+  *   the path of the file
+  * @return
+  *   the List of lines, lines being either a String or None.
   */
-def csvToList(path: String): List[List[Option[String]]]  = {
-  val reader = CSVReader.open(new File(path))
+def csvToList(path: String): Option[List[List[Option[String]]]] = {
 
-  return reader
-    .all()
-    .zipWithIndex
-    .filter((line, index) => index != 0 && line.length == 26)
-    .map((line, index) =>
-      line.map(value => {
-        if (value == "") None
-        else Option(value)
-      })
-    )
+  val correctColumns = List(
+    "date",
+    "season",
+    "neutral",
+    "playoff",
+    "team1",
+    "team2",
+    "elo1_pre",
+    "elo2_pre",
+    "elo_prob1",
+    "elo_prob2",
+    "elo1_post",
+    "elo2_post",
+    "rating1_pre",
+    "rating2_pre",
+    "pitcher1",
+    "pitcher2",
+    "pitcher1_rgs",
+    "pitcher2_rgs",
+    "pitcher1_adj",
+    "pitcher2_adj",
+    "rating_prob1",
+    "rating_prob2",
+    "rating1_post",
+    "rating2_post",
+    "score1",
+    "score2"
+  )
+
+  try {
+    val reader = CSVReader.open(new File(path))
+    val csvValues = reader.all()
+
+    if (csvValues(0) != correctColumns) {
+      return None
+    }
+
+    return Option(
+      csvValues
+      .zipWithIndex
+      .filter((line, index) => index != 0 && line.length == 26)
+      .map((line, index) =>
+        line.map(value => {
+          if (value == "") None
+          else Option(value)
+        })
+      ))
+
+  } catch {
+    case e: FileNotFoundException => None
+  }
 }
 
-/**
-  * Transform a chunk of matches into a json response
+/** Transform a chunk of matches into a json response
   *
-  * @param matchChunk the chunk of matches
-  * @return Json API response
+  * @param matchChunk
+  *   the chunk of matches
+  * @return
+  *   Json API response
   */
 def matchChunkToJsonReponse(matchChunk: Chunk[Match]): Response = matchChunk.isEmpty match
   case false => {
@@ -54,11 +97,12 @@ def matchChunkToJsonReponse(matchChunk: Chunk[Match]): Response = matchChunk.isE
     Response.json(s"""{"response": ${null}}""")
   }
 
-/**
-  *  Transform a match option to JSON response
+/** Transform a match option to JSON response
   *
-  * @param matchOption the match to be returned
-  * @return Json API response
+  * @param matchOption
+  *   the match to be returned
+  * @return
+  *   Json API response
   */
 def matchOptionToJsonReponse(matchOption: Option[Match]): Response = matchOption.isEmpty match
   case false => {
@@ -75,15 +119,16 @@ def matchOptionToJsonReponse(matchOption: Option[Match]): Response = matchOption
     Response.json(s"""{"response": ${response.toString}}""")
   }
   case true => {
-      Response.json(s"""{"response": ${null}}""")
+    Response.json(s"""{"response": ${null}}""")
   }
 
-/**
-  * Turns a Option of String into a valid JSON response.
+/** Turns a Option of String into a valid JSON response.
   *
-  * @param optionnalValue the value to turn into JSON
-  * @return the Response with the newly created JSON.
+  * @param optionnalValue
+  *   the value to turn into JSON
+  * @return
+  *   the Response with the newly created JSON.
   */
-def predictOptionToJson(optionnalValue: Option[Any]): Response = {
-  Response.json(s"""{"response": "${optionnalValue.getOrElse(default = null)}""}""")
-}
+def predictOptionToJson(optionnalValue: Option[Any]): Response = optionnalValue.isDefined match 
+  case true => Response.json(s"""{"response": "${optionnalValue.get}"}""")
+  case false => Response.json(s"""{"response": ${null}}""")
