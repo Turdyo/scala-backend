@@ -54,14 +54,6 @@ val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transactio
   ZIO.collectAll(queries)
 }
 
-val readAll: ZIO[ZConnectionPool, Throwable, Chunk[(Int, String)]] = transaction {
-  selectAll(sql"SELECT season, playoff FROM match".as[(Int, String)])
-}
-
-val readScore: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {
-  selectOne(sql"SELECT score1 from match".as[Int])
-}
-
 def predictEloGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[String]] = transaction {
   val id = gameId.toInt
   selectOne(
