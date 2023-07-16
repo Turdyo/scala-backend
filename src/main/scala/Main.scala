@@ -24,7 +24,7 @@ object MlbApi extends ZIOAppDefault {
   val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
     execute(
       sql"""
-      CREATE TABLE IF NOT EXISTS baseballElo(
+      CREATE TABLE IF NOT EXISTS match(
         id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
         match_date VARCHAR(10) NOT NULL,
         season INTEGER NOT NULL,
@@ -54,31 +54,33 @@ object MlbApi extends ZIOAppDefault {
         score2 INTEGER);"""
     )
   }
-
+ 
   val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transaction {
-    var idCounter: Int = 0
     val csvList = csvToList("./csv/mlb_elo_latest.csv")
-    val queries = csvList.map(line => {
-      val result = insert(
-        sql"INSERT INTO baseballElo VALUES(${idCounter}, ${line(0)}, ${line(1)}, ${line(2)}, ${line(3)}, ${line(4)}, ${line(5)}, ${line(6)}, ${line(7)}, ${line(8)}, ${line(9)}, ${line(10)}, ${line(11)}, ${line(12)}, ${line(13)}, ${line(14)}, ${line(15)}, ${line(16)}, ${line(17)}, ${line(18)}, ${line(19)}, ${line(20)}, ${line(21)}, ${line(22)}, ${line(23)}, ${line(24)}, ${line(25)})"
+    val queries = csvList.zipWithIndex.map((line, index) => {
+      insert(
+        sql"INSERT INTO match VALUES(${index}, ${line(0)}, ${line(1)}, ${line(2)}, ${line(3)}, ${line(4)}, ${line(5)}, ${line(6)}, ${line(7)}, ${line(8)}, ${line(9)}, ${line(10)}, ${line(11)}, ${line(12)}, ${line(13)}, ${line(14)}, ${line(15)}, ${line(16)}, ${line(17)}, ${line(18)}, ${line(19)}, ${line(20)}, ${line(21)}, ${line(22)}, ${line(23)}, ${line(24)}, ${line(25)})"
       )
-      idCounter = idCounter + 1
-      result
     })
     ZIO.collectAll(queries)
   }
 
   val readAll: ZIO[ZConnectionPool, Throwable, Chunk[(Int, String)]] = transaction {
-    selectAll(sql"SELECT season, playoff FROM baseballElo".as[(Int, String)])
+    selectAll(sql"SELECT season, playoff FROM match".as[(Int, String)])
   }
 
   val readScore: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {
-    selectOne(sql"SELECT score1 from baseballElo".as[Int])
+    selectOne(sql"SELECT score1 from match".as[Int])
   }
 
-  def predictGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[(String, String, String)]] = transaction {
+  def predictEloGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[String]] = transaction {
     val id = gameId.toInt
-    selectOne(sql"SELECT match_date, elo1_pre, elo2_pre from baseballElo WHERE id=${id}".as[(String, String, String)])
+    selectOne(sql"SELECT CASE WHEN elo_prob1 > elo_prob2 THEN team1 ELSE team2 END as winning_team FROM match WHERE id=${id}".as[String])
+  }
+
+  def predictRatingGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[String]] = transaction {
+    val id = gameId.toInt
+    selectOne(sql"SELECT CASE WHEN rating_prob1 > rating_prob2 THEN team1 ELSE team2 END as winning_team FROM match WHERE id=${id}".as[String])
   }
 
   val endpoints: App[ZConnectionPool] =
@@ -102,14 +104,19 @@ object MlbApi extends ZIOAppDefault {
           } yield response
         }
 
-        case Method.GET -> Root / "predict" / "game" / gameId => {
+        case Method.GET -> Root / "predict" / "elo" / gameId => {
           for {
-            _ <- Console.printLine(s"Prediction for game: ${gameId}")
-            data <- predictGame(gameId)
-            response <- ZIO.from({
-              val result = if (data.get(1) > data.get(2)) 1 else 2 
-              optionPredictToJson(data, result)
-            })
+            _ <- Console.printLine(s"Prediction by elo for game: ${gameId}")
+            data <- predictEloGame(gameId)
+            response <- ZIO.from(optionToJson(data))
+          } yield response
+        }
+
+        case Method.GET -> Root / "predict" / "rating" / gameId => {
+          for {
+            _ <- Console.printLine(s"Prediction by rating for game: ${gameId}")
+            data <- predictRatingGame(gameId)
+            response <- ZIO.from(optionToJson(data))
           } yield response
         }
       }
