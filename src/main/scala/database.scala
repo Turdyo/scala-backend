@@ -60,8 +60,21 @@ val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transactio
   ZIO.collectAll(queries)
 }
 
-val readAll: ZIO[ZConnectionPool, Throwable, Chunk[(Int, String)]] = transaction {
-  selectAll(sql"SELECT season, playoff FROM match".as[(Int, String)])
+val readAll: ZIO[ZConnectionPool, Throwable, Chunk[Match]] = transaction {
+  selectAll(
+    sql"SELECT id, match_date, season, team1, team2, score1, score2 FROM match ORDER BY match_date DESC".as[Match]
+  )
+}
+
+def readMatch(match_id: String): ZIO[ZConnectionPool, Throwable, Option[Match]] = transaction {
+  selectOne(sql"SELECT id, match_date, season, team1, team2, score1, score2 FROM match WHERE id = ${match_id}".as[Match])
+}
+
+def readBySeason(season: String): ZIO[ZConnectionPool, Throwable, Chunk[Match]] = transaction {
+  selectAll(
+    sql"SELECT id, match_date, season, team1, team2, score1, score2 FROM match WHERE season = ${season} ORDER BY match_date DESC"
+      .as[Match]
+  )
 }
 
 val readScore: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {

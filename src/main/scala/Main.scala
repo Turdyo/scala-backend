@@ -3,7 +3,6 @@ package mlb
 import zio._
 import zio.jdbc._
 import zio.http._
-import zio.stream.ZStream
 
 object MlbApi extends ZIOAppDefault {
 
@@ -28,25 +27,12 @@ object MlbApi extends ZIOAppDefault {
         case Method.GET -> Root / "init" => {
           ZIO.from(Response.json("""{"response": "database initialised !"}"""))
         }
-        case Method.GET -> Root / "season-playoff" => {
-          for{
-            result <- readAll
-            response <- ZIO.from(chunkOfTwoToJson(result))
-          } yield response
-        }
-
-        case Method.GET -> Root / "first-score" => {
-          for {
-            score <- readScore
-            response <- ZIO.from(optionToJson(score))
-          } yield response
-        }
 
         case Method.GET -> Root / "predict" / "elo" / gameId => {
           for {
             _ <- Console.printLine(s"Prediction by elo for game: ${gameId}")
             data <- predictEloGame(gameId)
-            response <- ZIO.from(optionToJson(data))
+            response <- ZIO.from(predictOptionToJson(data))
           } yield response
         }
 
@@ -54,9 +40,25 @@ object MlbApi extends ZIOAppDefault {
           for {
             _ <- Console.printLine(s"Prediction by rating for game: ${gameId}")
             data <- predictRatingGame(gameId)
-            response <- ZIO.from(optionToJson(data))
+            response <- ZIO.from(predictOptionToJson(data))
           } yield response
         }
+        
+      case Method.GET -> Root / "matches" => for {
+        data <- readAll
+        response <- ZIO.from(matchChunkToJsonReponse(data))
+      } yield response
+
+      case Method.GET -> Root / "matches" / "season" / season => for {
+        data <- readBySeason(season = season)
+        response <- ZIO.from(matchChunkToJsonReponse(data))
+      } yield response
+
+      case Method.GET -> Root / "matches" / match_id => for {
+        data <- readMatch(match_id)
+        response <- ZIO.from(matchOptionToJsonReponse(data))
+      } yield response
+        
       }
       .withDefaultErrorResponse
 
