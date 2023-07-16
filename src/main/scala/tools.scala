@@ -7,9 +7,14 @@ import zio.http.Response
 import com.github.tototoshi.csv._
 import scala.collection.mutable
 
-type Data = List[List[Option[String]]]
-
-def csvToList(path: String): Data = {
+/**
+  * Takes the path of a csv file containing the columns declared in our "match sql table". 
+  * If the file is not found, it will return an empty List.
+  *
+  * @param path the path of the file
+  * @return the List of lines, lines being either a String or None.
+  */
+def csvToList(path: String): List[List[Option[String]]]  = {
   val reader = CSVReader.open(new File(path))
 
   return reader
@@ -73,6 +78,12 @@ def matchOptionToJsonReponse(matchOption: Option[Match]): Response = matchOption
       Response.json(s"""{"response": ${null}}""")
   }
 
+/**
+  * Turns a Option of String into a valid JSON response.
+  *
+  * @param optionnalValue the value to turn into JSON
+  * @return the Response with the newly created JSON.
+  */
 def predictOptionToJson(optionnalValue: Option[Any]): Response = {
   Response.json(s"""{"response": "${optionnalValue.getOrElse(default = null)}""}""")
 }
