@@ -25,6 +25,7 @@ object MlbApi extends ZIOAppDefault {
     execute(
       sql"""
       CREATE TABLE IF NOT EXISTS baseballElo(
+        id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
         match_date VARCHAR(10) NOT NULL,
         season INTEGER NOT NULL,
         neutral INTEGER NOT NULL,
@@ -55,11 +56,14 @@ object MlbApi extends ZIOAppDefault {
   }
 
   val insertRows: ZIO[ZConnectionPool, Throwable, List[UpdateResult]] = transaction {
+    var idCounter: Int = 0
     val csvList = csvToList("./csv/mlb_elo_latest.csv")
     val queries = csvList.map(line => {
-      insert(
-        sql"INSERT INTO baseballElo VALUES(${line(0)}, ${line(1)}, ${line(2)}, ${line(3)}, ${line(4)}, ${line(5)}, ${line(6)}, ${line(7)}, ${line(8)}, ${line(9)}, ${line(10)}, ${line(11)}, ${line(12)}, ${line(13)}, ${line(14)}, ${line(15)}, ${line(16)}, ${line(17)}, ${line(18)}, ${line(19)}, ${line(20)}, ${line(21)}, ${line(22)}, ${line(23)}, ${line(24)}, ${line(25)})"
+      val result = insert(
+        sql"INSERT INTO baseballElo VALUES(${idCounter}, ${line(0)}, ${line(1)}, ${line(2)}, ${line(3)}, ${line(4)}, ${line(5)}, ${line(6)}, ${line(7)}, ${line(8)}, ${line(9)}, ${line(10)}, ${line(11)}, ${line(12)}, ${line(13)}, ${line(14)}, ${line(15)}, ${line(16)}, ${line(17)}, ${line(18)}, ${line(19)}, ${line(20)}, ${line(21)}, ${line(22)}, ${line(23)}, ${line(24)}, ${line(25)})"
       )
+      idCounter = idCounter + 1
+      result
     })
     ZIO.collectAll(queries)
   }
@@ -70,6 +74,11 @@ object MlbApi extends ZIOAppDefault {
 
   val readScore: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {
     selectOne(sql"SELECT score1 from baseballElo".as[Int])
+  }
+
+  def predictGame(gameId: String): ZIO[ZConnectionPool, Throwable, Option[(String, String, String)]] = transaction {
+    val id = gameId.toInt
+    selectOne(sql"SELECT match_date, elo1_pre, elo2_pre from baseballElo WHERE id=${id}".as[(String, String, String)])
   }
 
   val endpoints: App[ZConnectionPool] =
@@ -93,7 +102,16 @@ object MlbApi extends ZIOAppDefault {
           } yield response
         }
 
-        case Method.GET -> Root / "predict" / "game" / gameId => ???
+        case Method.GET -> Root / "predict" / "game" / gameId => {
+          for {
+            _ <- Console.printLine(s"Prediction for game: ${gameId}")
+            data <- predictGame(gameId)
+            response <- ZIO.from({
+              val result = if (data.get(1) > data.get(2)) 1 else 2 
+              optionPredictToJson(data, result)
+            })
+          } yield response
+        }
       }
       .withDefaultErrorResponse
 

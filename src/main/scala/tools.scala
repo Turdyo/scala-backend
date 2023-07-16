@@ -34,3 +34,21 @@ def chunkOfTwoToJson(chunk: Chunk[(Any, Any)]): Response = chunk.isEmpty match
   case true => {
     Response.json(s"""{"response": ${null}}""")
   }
+
+def optionPredictToJson(predict: Option[(String, String, String)], result: Int): Response = {
+  val predictData = predict.getOrElse(null)
+  predictData match
+    case null => {
+      Response.json(s"""{"response": ${null}}""")
+    } 
+    case _ => {
+      Response.json(s"""
+        {
+          "date": "${predictData(0)}",
+          "team1_elo": ${predictData(1)},
+          "team2_elo": ${predictData(2)},
+          "Probable_winner": ${result}
+        }
+      """)
+    }
+}
