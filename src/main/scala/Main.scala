@@ -3,7 +3,6 @@ package mlb
 import zio._
 import zio.jdbc._
 import zio.http._
-import zio.stream.ZStream
 
 object MlbApi extends ZIOAppDefault {
 
@@ -44,6 +43,22 @@ object MlbApi extends ZIOAppDefault {
             response <- ZIO.from(predictOptionToJson(data))
           } yield response
         }
+        
+      case Method.GET -> Root / "matches" => for {
+        data <- readAll
+        response <- ZIO.from(matchChunkToJsonReponse(data))
+      } yield response
+
+      case Method.GET -> Root / "matches" / "season" / season => for {
+        data <- readBySeason(season = season)
+        response <- ZIO.from(matchChunkToJsonReponse(data))
+      } yield response
+
+      case Method.GET -> Root / "matches" / match_id => for {
+        data <- readMatch(match_id)
+        response <- ZIO.from(matchOptionToJsonReponse(data))
+      } yield response
+        
       }
       .withDefaultErrorResponse
 
